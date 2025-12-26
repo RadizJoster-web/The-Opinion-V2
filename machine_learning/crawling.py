@@ -1,78 +1,95 @@
-import os    
 import pandas as pd
+import json
 import re
 import subprocess
 import sys
+import os
 
+# Ambil data dari stdin (Node.js)
+data_from_server = sys.stdin.read()
 
-def crawl_tweets(title_crawling, date_from, date_until, limit_tweet, lang, API_TWEET):
+def crawl_tweets():
+    try:
+        input_obj = json.loads(data_from_server)
+
+        topic = input_obj.get("topic")
+        date_from = input_obj.get("date_from")
+        date_until = input_obj.get("date_until")
+        limit_tweet = input_obj.get("limit_tweet")
+        lang = input_obj.get("lang")
+        TWEET_TOKEN = input_obj.get("TWEET_TOKEN")
+
+        # Validasi sederhana
+        if not all([topic, TWEET_TOKEN]):
+            raise ValueError("Topic atau Token tidak boleh kosong.")
+
+    except Exception as e:
+        print(json.dumps({"status": "error", "message": f"Input error: {str(e)}"}))
+        sys.exit(1)
+
+    # 1. Tentukan BASE DIRECTORY untuk data crawling
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 2. Validasi limit_tweet
-    if not isinstance(limit_tweet, int) or limit_tweet <= 0:
-        raise ValueError("Parameter 'limit_tweet' harus berupa bilangan bulat positif.")
-
-    # 3. Validasi lang
-    # Asumsi: hanya menerima kode bahasa dua huruf dan tidak kosong
-    if not isinstance(lang, str) or not re.match(r'^[a-z]{2}$', lang.lower()):
-        raise ValueError("Parameter 'lang' harus berupa string kode bahasa dua huruf (e.g., 'id', 'en').")
+    # 2. Nama file (mengganti spasi dengan dash)
+    clean_topic = topic.replace(" ", "-")
+    file_name = f"{clean_topic}.csv"
     
-    # The file name will save as title_crawling.csv, but if there's space in between 2 word then will replace with "-"
-    file_name = f"{title_crawling}.csv"
-    if " " in title_crawling:
-         clean_title_crawling = title_crawling.replace(" ", "-")
-         file_name = f"{clean_title_crawling}.csv"
+    # 3. Path lengkap untuk dibaca Pandas nanti
+    # tweet-harvest akan otomatis membuat folder 'tweets-data' di tempat command dijalankan
+    file_path = os.path.join(base_dir, "tweets-data", file_name)
 
-    # Search Keyword for theme
-    search_keyword = f"{title_crawling} since:{date_from} until:{date_until} lang:{lang}"
+    # Search Keyword
+    search_keyword = f"{topic} since:{date_from} until:{date_until} lang:{lang}"
 
     try:
-        # Crawling tweet
+        # Jalankan crawling
         command = [
-            "npx", 
-            "-y", 
-            "tweet-harvest@2.6.1", 
-            "-o", file_name, 
+            "npx", "-y", "tweet-harvest@2.6.1", 
+            "-o", file_name, # Hanya nama file, tweet-harvest akan buat folder tweets-data otomatis
             "-s", search_keyword, 
             "--tab", "LATEST", 
             "-l", str(limit_tweet),
-            "--token", API_TWEET
+            "--token", TWEET_TOKEN
         ]
 
-        # Menjalankan perintah
-        # 1. stdout=subprocess.DEVNULL: MENGALIKAN stdout ke tempat sampah
-        # 2. stderr=subprocess.DEVNULL: MENGALIKAN stderr ke tempat sampah
-        # 3. check=True: Akan melempar CalledProcessError jika status code != 0
-        result = subprocess.run(
+        # JALANKAN DI BASE_DIR (machine_learning)
+        # Jangan jalankan di dalam tweets-data agar tidak double folder
+        subprocess.run(
             command,
             check=True,
+            cwd=base_dir, 
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
 
-        # if success result.returncode will 0
-        status_code_crawling = 0
     except subprocess.CalledProcessError as e:
-        # failed when runing npx
-        print(f"Crawling failled with code: {e.returncode}", file=sys.stderr)
-        return None
-    except FileExistsError:
-        # This will happend when 'npx' and 'node' can't find on path
-        print("Error: 'npx' not found. Is Node.js installed?", file=sys.stderr)
-        return None
-
-    try:
-
-        # Specify the path to your CSV file
-        file_path = f"./tweets-data/{file_name}"
-
-        # Read the cvs file as pandas module
-        df = pd.read_csv(file_path, delimiter=",")
-
-        return df
+        print(json.dumps({"status": "error", "message": f"Crawling failed"}))
+        return
     
-    except FileNotFoundError:
-        return None
-    except pd.errors.EmptyDataError:
-        return None
+    # 4. Membaca hasil
+    try:
+        if os.path.exists(file_path):
+            # Baca data csv
+            df = pd.read_csv(file_path)
+
+            # Ambil data tweets sebagai list of dictionaries
+            # Kita gunakan to_dict agar bisa digabung ke dalam satu object JSON
+            tweets_preview = df.to_json(orient='records')
+
+            # Kirim ke Node.js sebagai satu string JSON yang valid
+            print(tweets_preview)
+        else:
+            # Jika file_path tidak ada, coba cek apakah file ada di root base_dir
+            # (Beberapa versi tweet-harvest punya perilaku berbeda)
+            fallback_path = os.path.join(base_dir, file_name)
+            if os.path.exists(fallback_path):
+                df = pd.read_csv(fallback_path)
+                print(df.to_json(orient='records'))
+            else:
+                print(json.dumps({"status": "failed", "message": "File CSV tidak ditemukan."}))
+    
     except Exception as e:
-        return None
+        print(json.dumps({"status": "error", "message": f"Read error: {str(e)}"}))
+
+if __name__ == "__main__":
+    crawl_tweets()

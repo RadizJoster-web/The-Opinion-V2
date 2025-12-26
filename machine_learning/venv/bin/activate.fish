@@ -33,11 +33,10 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV '/media/user-kali/d8e8e9d6-c262-41fc-b713-e7bd2c5bce3f/VS Code/The-opinion/server/machine_learning/venv'
+set -gx VIRTUAL_ENV '/media/user/5e0b9e02-719f-4fe5-b6bc-c81da4561ee0/VS-Code/The Opinion-v2/machine_learning/venv'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
-set -gx VIRTUAL_ENV_PROMPT venv
 
 # Unset PYTHONHOME if set.
 if set -q PYTHONHOME
@@ -57,7 +56,7 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
         set -l old_status $status
 
         # Output the venv prompt; color taken from the blue of the Python logo.
-        printf "%s(%s)%s " (set_color 4B8BBE) venv (set_color normal)
+        printf "%s%s%s" (set_color 4B8BBE) '(venv) ' (set_color normal)
 
         # Restore the return status of the previous command.
         echo "exit $old_status" | .
@@ -66,4 +65,5 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     end
 
     set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"
+    set -gx VIRTUAL_ENV_PROMPT '(venv) '
 end

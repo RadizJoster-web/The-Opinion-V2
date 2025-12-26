@@ -1,9 +1,0 @@
-#!/bin/sh
-'''exec' "/media/user-kali/d8e8e9d6-c262-41fc-b713-e7bd2c5bce3f/VS Code/The-opinion/server/machine_learning/venv/bin/python3" "$0" "$@"
-' '''
-import sys
-from tqdm.cli import main
-if __name__ == '__main__':
-    if sys.argv[0].endswith('.exe'):
-        sys.argv[0] = sys.argv[0][:-4]
-    sys.exit(main())

@@ -9,17 +9,17 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV '/media/user-kali/d8e8e9d6-c262-41fc-b713-e7bd2c5bce3f/VS Code/The-opinion/server/machine_learning/venv'
+setenv VIRTUAL_ENV '/media/user/5e0b9e02-719f-4fe5-b6bc-c81da4561ee0/VS-Code/The Opinion-v2/machine_learning/venv'
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/"bin":$PATH"
-setenv VIRTUAL_ENV_PROMPT venv
 
 
 set _OLD_VIRTUAL_PROMPT="$prompt"
 
 if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
-    set prompt = "("venv") $prompt:q"
+    set prompt = '(venv) '"$prompt"
+    setenv VIRTUAL_ENV_PROMPT '(venv) '
 endif
 
 alias pydoc python -m pydoc
