@@ -31,44 +31,52 @@ def classify():
     
     df = pd.read_csv(file_path, delimiter=',')
 
-    # Pre-Processing
-    clean_df = pre_processing(df)
-    # Klasifikasi sentimen
-    labeled_df = analisis_sentiment(clean_df)
-    # Extraksi-Fitur [Hitung Matrix]
-    fitur_stats = extraksi_fitur(labeled_df)
+    try:
+
+        # Pre-Processing
+        clean_df = pre_processing(df)
+        # Klasifikasi sentimen
+        labeled_df = analisis_sentiment(clean_df)
+        # Extraksi-Fitur [Hitung Matrix]
+        fitur_stats = extraksi_fitur(labeled_df)
 
 
-    # Menghitung total data
-    total_tweets = len(labeled_df)
-    
-    # Menghitung statistik sentimen
-    stats_sentiment = labeled_df["sentiment"].value_counts().to_dict()
+        # Menghitung total data
+        total_tweets = len(labeled_df)
 
-    # Mengambil 10 data pertama untuk preview
-    labeled_df_preview = labeled_df[["clean_text", "sentiment", "polarity", "created_at", "tweet_url"]].head(10)
-    # Mengubah 10 data preview menjadi to_dict agar bisa di kirim
-    labeled_df_preview_list = labeled_df_preview.to_dict('records')
+        # Menghitung statistik sentimen
+        stats_sentiment = labeled_df["sentiment"].value_counts().to_dict()
+
+        # Mengambil 10 data pertama untuk preview
+        labeled_df_preview = labeled_df[["clean_text", "sentiment", "polarity", "created_at", "tweet_url"]].head(10)
+        # Mengubah 10 data preview menjadi to_dict agar bisa di kirim
+        labeled_df_preview_list = labeled_df_preview.to_dict('records')
 
 
-    # Kumpulkan semua data untuk di kembalikan ke server
-    final_output = {
-        "status": "success",
-        "message": "Pipeline Executed Successfully. Data is ready",
-        "total_tweets": total_tweets,
-        "stats_sentiment": stats_sentiment,
-        "fitur_ekstraksi": {
-            "jumlah_fitur_tfidf": fitur_stats["total_tf_idf"],
-            # Mengakses elemen tuple (baris, kolom) untuk tampilan yang lebih rapi
-            "bentuk_matrix": f"{fitur_stats['matrix_tf_idf'][0]} dokumen x {fitur_stats['matrix_tf_idf'][1]} fitur",
-            # Mengubah array numpy ke list Python agar mudah di-JSON-kan
-            "top_10_fitur_contoh": fitur_stats["example_fitur"].tolist()
-        },
-        "data_preview": labeled_df_preview_list
-    }
+        # Kumpulkan semua data untuk di kembalikan ke server
+        final_output = {
+            "status": "success",
+            "message": "Pipeline Executed Successfully. Data is ready",
+            "total_tweets": total_tweets,
+            "stats_sentiment": stats_sentiment,
+            "fitur_ekstraksi": {
+                "jumlah_fitur_tfidf": fitur_stats["total_tf_idf"],
+                # Mengakses elemen tuple (baris, kolom) untuk tampilan yang lebih rapi
+                "bentuk_matrix": f"{fitur_stats['matrix_tf_idf'][0]} dokumen x {fitur_stats['matrix_tf_idf'][1]} fitur",
+                # Mengubah array numpy ke list Python agar mudah di-JSON-kan
+                "top_10_fitur_contoh": fitur_stats["example_fitur"].tolist()
+            },
+            "data_preview": labeled_df_preview_list
+        }
 
-    print(json.dumps(final_output))
+        print(json.dumps(final_output))
+    except Exception as err:
+        error_response = {
+            "status": "failed", 
+            "message": f"Process classification failed: {str(err)}"
+        }
 
+        print(json.dumps(error_response))
 
 if __name__ == "__main__":
     classify()
