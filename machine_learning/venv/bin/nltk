@@ -1,0 +1,10 @@
+#!/bin/sh
+'''exec' "/media/user/5e0b9e02-719f-4fe5-b6bc-c81da4561ee0/VS-Code/The Opinion-v2/machine_learning/venv/bin/python3" "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+from nltk.cli import cli
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(cli())

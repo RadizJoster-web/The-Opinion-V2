@@ -3,6 +3,10 @@ import json
 import pandas as pd
 import os
 
+from lib.pre_processing import pre_processing
+from lib.extraksi_fitur import extraksi_fitur
+from lib.analisis_sentiment_en import analisis_sentiment
+
 def classify():
     # Ambil data dari server
     # data ini berupa nama file yang sudah di simpan
@@ -28,8 +32,42 @@ def classify():
     df = pd.read_csv(file_path, delimiter=',')
 
     # Pre-Processing
-    # Extraksi-Fitur [Hitung Matrix]
+    clean_df = pre_processing(df)
     # Klasifikasi sentimen
+    labeled_df = analisis_sentiment(clean_df)
+    # Extraksi-Fitur [Hitung Matrix]
+    fitur_stats = extraksi_fitur(labeled_df)
+
+
+    # Menghitung total data
+    total_tweets = len(labeled_df)
+    
+    # Menghitung statistik sentimen
+    stats_sentiment = labeled_df["sentiment"].value_counts().to_dict()
+
+    # Mengambil 10 data pertama untuk preview
+    labeled_df_preview = labeled_df[["clean_text", "sentiment", "polarity", "created_at", "tweet_url"]].head(10)
+    # Mengubah 10 data preview menjadi to_dict agar bisa di kirim
+    labeled_df_preview_list = labeled_df_preview.to_dict('records')
+
+
+    # Kumpulkan semua data untuk di kembalikan ke server
+    final_output = {
+        "status": "success",
+        "message": "Pipeline Executed Successfully. Data is ready",
+        "total_tweets": total_tweets,
+        "stats_sentiment": stats_sentiment,
+        "fitur_ekstraksi": {
+            "jumlah_fitur_tfidf": fitur_stats["total_tf_idf"],
+            # Mengakses elemen tuple (baris, kolom) untuk tampilan yang lebih rapi
+            "bentuk_matrix": f"{fitur_stats['matrix_tf_idf'][0]} dokumen x {fitur_stats['matrix_tf_idf'][1]} fitur",
+            # Mengubah array numpy ke list Python agar mudah di-JSON-kan
+            "top_10_fitur_contoh": fitur_stats["example_fitur"].tolist()
+        },
+        "data_preview": labeled_df_preview_list
+    }
+
+    print(json.dumps(final_output))
 
 
 if __name__ == "__main__":
