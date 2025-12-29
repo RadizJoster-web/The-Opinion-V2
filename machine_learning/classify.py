@@ -48,15 +48,14 @@ def classify():
         stats_sentiment = labeled_df["sentiment"].value_counts().to_dict()
 
         # Mengambil 10 data pertama untuk preview
-        labeled_df_preview = labeled_df[["clean_text", "sentiment", "polarity", "created_at", "tweet_url"]].head(10)
+        labeled_df_preview = labeled_df[["clean_text", "sentiment", "polarity", "created_at", "tweet_url"]].head(12)
         # Mengubah 10 data preview menjadi to_dict agar bisa di kirim
         labeled_df_preview_list = labeled_df_preview.to_dict('records')
 
 
         # Kumpulkan semua data untuk di kembalikan ke server
         final_output = {
-            "status": "success",
-            "message": "Pipeline Executed Successfully. Data is ready",
+            "file_name": file_name,
             "total_tweets": total_tweets,
             "stats_sentiment": stats_sentiment,
             "fitur_ekstraksi": {
@@ -64,7 +63,7 @@ def classify():
                 # Mengakses elemen tuple (baris, kolom) untuk tampilan yang lebih rapi
                 "bentuk_matrix": f"{fitur_stats['matrix_tf_idf'][0]} dokumen x {fitur_stats['matrix_tf_idf'][1]} fitur",
                 # Mengubah array numpy ke list Python agar mudah di-JSON-kan
-                "top_10_fitur_contoh": fitur_stats["example_fitur"].tolist()
+                "top_10_fitur": fitur_stats["example_fitur"].tolist()
             },
             "data_preview": labeled_df_preview_list
         }
