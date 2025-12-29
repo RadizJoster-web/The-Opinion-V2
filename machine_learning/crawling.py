@@ -69,24 +69,34 @@ def crawl_tweets():
     # 4. Membaca hasil
     try:
         if os.path.exists(file_path):
-            # Baca data csv
             df = pd.read_csv(file_path)
-
-            # Ambil data tweets sebagai list of dictionaries
-            # Kita gunakan to_dict agar bisa digabung ke dalam satu object JSON
-            tweets_preview = df.to_json(orient='records')
-
-            # Kirim ke Node.js sebagai satu string JSON yang valid
-            print(tweets_preview)
         else:
-            # Jika file_path tidak ada, coba cek apakah file ada di root base_dir
-            # (Beberapa versi tweet-harvest punya perilaku berbeda)
+            # Cek fallback path jika file_path utama tidak ada
             fallback_path = os.path.join(base_dir, file_name)
             if os.path.exists(fallback_path):
                 df = pd.read_csv(fallback_path)
-                print(df.to_json(orient='records'))
             else:
-                print(json.dumps({"status": "failed", "message": "File CSV tidak ditemukan."}))
+                df = None
+
+        if df is not None:
+            # 1. Filter kolom dan ambil 10 data pertama
+            # 2. Ubah ke dictionary agar bisa dimasukkan ke JSON utama
+            preview_list = df[['full_text', 'tweet_url', "created_at"]].head(10).to_dict(orient='records')
+
+            # 3. Buat struktur output gabungan
+            python_output = {
+                "status": "success",
+                "file_name": file_name,
+                "tweets_preview": preview_list
+            }
+
+            # 4. Kirim sebagai string JSON (Gunakan json.dumps, bukan .to_json())
+            print(json.dumps(python_output))
+        else:
+            print(json.dumps({"status": "failed", "message": "File CSV tidak ditemukan."}))
+    
+    except Exception as e:
+        print(json.dumps({"status": "error", "message": f"Read error: {str(e)}"}))
     
     except Exception as e:
         print(json.dumps({"status": "error", "message": f"Read error: {str(e)}"}))
